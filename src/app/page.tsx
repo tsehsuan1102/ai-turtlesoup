@@ -1,7 +1,14 @@
 "use client";
-
 import React, { useState } from "react";
-import styles from "./page.module.css";
+import Container from "@mui/material/Container";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemText from "@mui/material/ListItemText";
+import Box from "@mui/material/Box";
 
 // Dummy data for initial soup and Q&A history
 const DUMMY_SOUP = {
@@ -29,35 +36,88 @@ export default function Home() {
   };
 
   return (
-    <main className={styles.main}>
-      <h1>海龜湯 AI 遊戲</h1>
-      <section className={styles.soupSection}>
-        <h2>{DUMMY_SOUP.title}</h2>
-        <p>{DUMMY_SOUP.description}</p>
-      </section>
-      <section className={styles.askSection}>
-        <input
-          type="text"
-          placeholder="請輸入你的提問..."
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          className={styles.input}
-        />
-        <button onClick={handleAsk} className={styles.button}>
-          送出
-        </button>
-      </section>
-      <section className={styles.historySection}>
-        <h3>提問紀錄</h3>
-        <ul>
-          {history.map((item, idx) => (
-            <li key={idx}>
-              <strong>Q:</strong> {item.question} <br />
-              <strong>A:</strong> {item.answer}
-            </li>
-          ))}
-        </ul>
-      </section>
-    </main>
+    <Container maxWidth="sm" sx={{ mt: 6, mb: 6 }}>
+      <Paper
+        elevation={6}
+        sx={{ p: 4, borderRadius: 4, bgcolor: "background.default" }}
+      >
+        <Typography
+          variant="h4"
+          fontWeight={700}
+          color="primary"
+          gutterBottom
+          align="center"
+        >
+          海龜湯機器人
+        </Typography>
+        <Paper elevation={2} sx={{ p: 2, mb: 3, bgcolor: "secondary.main" }}>
+          <Typography
+            variant="h6"
+            fontWeight={700}
+            color="primary.dark"
+            gutterBottom
+          >
+            {DUMMY_SOUP.title}
+          </Typography>
+          <Typography variant="body1" color="text.primary">
+            {DUMMY_SOUP.description}
+          </Typography>
+        </Paper>
+        <Box display="flex" gap={2} mb={3}>
+          <TextField
+            fullWidth
+            variant="outlined"
+            placeholder="請輸入你的提問..."
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleAsk();
+            }}
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleAsk}
+            sx={{ minWidth: 80 }}
+          >
+            送出
+          </Button>
+        </Box>
+        <Paper elevation={1} sx={{ p: 2, bgcolor: "background.paper" }}>
+          <Typography
+            variant="subtitle1"
+            fontWeight={700}
+            color="primary.dark"
+            gutterBottom
+          >
+            提問紀錄
+          </Typography>
+          <List>
+            {history.map((item, idx) => (
+              <ListItem
+                key={idx}
+                alignItems="flex-start"
+                disablePadding
+                sx={{ mb: 1 }}
+              >
+                <ListItemText
+                  primary={
+                    <>
+                      <strong>Q:</strong> {item.question}
+                    </>
+                  }
+                  secondary={
+                    <>
+                      <strong>A:</strong> {item.answer}
+                    </>
+                  }
+                  primaryTypographyProps={{ sx: { mb: 0.5 } }}
+                />
+              </ListItem>
+            ))}
+          </List>
+        </Paper>
+      </Paper>
+    </Container>
   );
 }
