@@ -4,7 +4,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 // const openai = new OpenAIApi(configuration);
-const GPT_MODEL = "gpt-4o-mini";
+const GPT_MODEL = "gpt-4.1-nano";
 
 export async function askLLM({
   puzzle,
