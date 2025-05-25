@@ -15,6 +15,7 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import { supabase } from "../../supabaseClient";
 import IconButton from "@mui/material/IconButton";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
+import { useMutation } from "@tanstack/react-query";
 
 interface Puzzle {
   id: string;
@@ -38,6 +39,39 @@ export default function PuzzlePage() {
   >([]);
   const isMobile = useMediaQuery("(max-width:600px)");
   const [isComposing, setIsComposing] = useState(false);
+  const askMutation = useMutation({
+    mutationFn: async ({
+      puzzle,
+      question,
+    }: {
+      puzzle: string;
+      question: string;
+    }) => {
+      const res = await fetch("/api/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ puzzle, question }),
+      });
+      if (!res.ok) throw new Error("API error");
+      return res.json();
+    },
+    onSuccess: (data, variables) => {
+      setHistory((prev) => [
+        ...prev,
+        {
+          question: variables.question,
+          answer: data.answer || "（AI 回答失敗）",
+        },
+      ]);
+      setQuestion("");
+    },
+    onError: (_error, variables) => {
+      setHistory((prev) => [
+        ...prev,
+        { question: variables.question, answer: "（AI 回答失敗）" },
+      ]);
+    },
+  });
 
   useEffect(() => {
     async function fetchPuzzle() {
@@ -58,12 +92,8 @@ export default function PuzzlePage() {
   }, [id]);
 
   const handleAsk = () => {
-    if (!question.trim()) return;
-    setHistory((prev) => [
-      ...prev,
-      { question, answer: "（尚未連接 AI，這裡是預設回答）" },
-    ]);
-    setQuestion("");
+    if (!question.trim() || !puzzle) return;
+    askMutation.mutate({ puzzle: puzzle.description, question });
   };
 
   if (loading) {
@@ -175,8 +205,9 @@ export default function PuzzlePage() {
             onClick={handleAsk}
             sx={{ minWidth: 80, fontSize: isMobile ? "1rem" : undefined }}
             size={isMobile ? "small" : "medium"}
+            disabled={askMutation.isPending}
           >
-            送出
+            {askMutation.isPending ? <CircularProgress size={20} /> : "送出"}
           </Button>
         </Box>
         <Paper
