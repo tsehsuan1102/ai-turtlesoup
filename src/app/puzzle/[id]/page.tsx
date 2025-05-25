@@ -37,6 +37,7 @@ export default function PuzzlePage() {
     { question: string; answer: string }[]
   >([]);
   const isMobile = useMediaQuery("(max-width:600px)");
+  const [isComposing, setIsComposing] = useState(false);
 
   useEffect(() => {
     async function fetchPuzzle() {
@@ -161,8 +162,10 @@ export default function PuzzlePage() {
             placeholder="請輸入你的提問..."
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
+            onCompositionStart={() => setIsComposing(true)}
+            onCompositionEnd={() => setIsComposing(false)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") handleAsk();
+              if (e.key === "Enter" && !isComposing) handleAsk();
             }}
             size={isMobile ? "small" : "medium"}
           />
