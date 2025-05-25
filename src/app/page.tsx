@@ -1,46 +1,112 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Container from "@mui/material/Container";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
-import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import ListItemText from "@mui/material/ListItemText";
 import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
 import useMediaQuery from "@mui/material/useMediaQuery";
+import { useRouter } from "next/navigation";
+import { supabase } from "./supabaseClient";
 
-// Dummy data for initial soup and Q&A history
-const DUMMY_SOUP = {
-  title: "神秘的房間",
-  description: "一個男人走進房間，關上燈，然後死了。為什麼？",
+interface Puzzle {
+  id: string;
+  title: string;
+  description: string;
+  answer: string;
+  hints: string[];
+  author?: string;
+  tags?: string[];
+}
+
+const Item = ({ puzzle, onClick }: { puzzle: Puzzle; onClick: () => void }) => {
+  return (
+    <Paper
+      elevation={3}
+      sx={{
+        width: "100%",
+        height: 280,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        alignItems: "stretch",
+        p: 2,
+        bgcolor: "secondary.main",
+        borderRadius: 3,
+        boxShadow: "0 2px 12px 0 rgba(46,196,182,0.08)",
+        transition: "box-shadow 0.2s",
+        ":hover": {
+          boxShadow: "0 4px 24px 0 rgba(46,196,182,0.18)",
+        },
+      }}
+    >
+      <Typography
+        variant="h6"
+        fontWeight={700}
+        color="primary.dark"
+        gutterBottom
+        sx={{
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          mb: 1,
+        }}
+      >
+        {puzzle.title}
+      </Typography>
+      <Typography
+        variant="body2"
+        color="text.primary"
+        sx={{
+          flexGrow: 1,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          display: "-webkit-box",
+          WebkitLineClamp: 3,
+          WebkitBoxOrient: "vertical",
+          mb: 2,
+        }}
+      >
+        {puzzle.description}
+      </Typography>
+      <Button
+        variant="contained"
+        color="primary"
+        fullWidth
+        sx={{ mt: 1, fontWeight: 600, letterSpacing: 1 }}
+        onClick={onClick}
+      >
+        開始挑戰
+      </Button>
+    </Paper>
+  );
 };
 
-const DUMMY_HISTORY = [
-  { question: "他是自殺嗎？", answer: "否" },
-  { question: "房間裡有其他人嗎？", answer: "否" },
-];
-
 export default function Home() {
-  const [question, setQuestion] = useState("");
-  const [history, setHistory] = useState(DUMMY_HISTORY);
+  const [puzzles, setPuzzles] = useState<Puzzle[]>([]);
+  const [loading, setLoading] = useState(true);
   const isMobile = useMediaQuery("(max-width:600px)");
+  const router = useRouter();
 
-  const handleAsk = () => {
-    if (!question.trim()) return;
-    // For now, just append to history with a dummy answer
-    setHistory((prev) => [
-      ...prev,
-      { question, answer: "（尚未連接 AI，這裡是預設回答）" },
-    ]);
-    setQuestion("");
-  };
+  useEffect(() => {
+    async function fetchPuzzles() {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("puzzles")
+        .select("id, title, description, answer, hints, author, tags");
+      if (!error && data) {
+        setPuzzles(data);
+      }
+      setLoading(false);
+    }
+    fetchPuzzles();
+  }, []);
 
   return (
     <Container
-      maxWidth={isMobile ? false : "sm"}
+      maxWidth={isMobile ? false : "md"}
       disableGutters={isMobile}
       sx={{
         mt: isMobile ? 0 : 6,
@@ -62,103 +128,57 @@ export default function Home() {
         }}
       >
         <Typography
-          variant="h4"
+          variant="h3"
           fontWeight={700}
           color="primary"
           gutterBottom
           align="center"
-          sx={{ fontSize: isMobile ? "2rem" : undefined }}
         >
           海龜湯機器人
         </Typography>
-        <Paper
-          elevation={isMobile ? 0 : 2}
-          square={isMobile}
-          sx={{
-            p: 2,
-            mb: 3,
-            bgcolor: "secondary.main",
-            borderRadius: isMobile ? 0 : 2,
-            boxShadow: isMobile ? "none" : undefined,
-          }}
+        <Typography
+          variant="body1"
+          color="text.primary"
+          align="center"
+          sx={{ mb: 4 }}
         >
-          <Typography
-            variant="h6"
-            fontWeight={700}
-            color="primary.dark"
-            gutterBottom
+          歡迎來到海龜湯推理遊戲！
+          <br />
+          選擇一個題目開始挑戰，並嘗試用「是/否」提問推理出真相。
+          <br />
+          點擊題目卡片下方的「開始挑戰」即可進入互動頁面，分享網址給朋友一起玩！
+        </Typography>
+        {loading ? (
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            minHeight="40vh"
           >
-            {DUMMY_SOUP.title}
-          </Typography>
-          <Typography variant="body1" color="text.primary">
-            {DUMMY_SOUP.description}
-          </Typography>
-        </Paper>
-        <Box display="flex" gap={2} mb={3}>
-          <TextField
-            fullWidth
-            variant="outlined"
-            placeholder="請輸入你的提問..."
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleAsk();
+            <CircularProgress />
+          </Box>
+        ) : (
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "1fr 1fr",
+                md: "1fr 1fr 1fr",
+              },
+              gap: 3,
             }}
-            size={isMobile ? "small" : "medium"}
-          />
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleAsk}
-            sx={{ minWidth: 80, fontSize: isMobile ? "1rem" : undefined }}
-            size={isMobile ? "small" : "medium"}
           >
-            送出
-          </Button>
-        </Box>
-        <Paper
-          elevation={isMobile ? 0 : 1}
-          square={isMobile}
-          sx={{
-            p: 2,
-            bgcolor: "background.paper",
-            borderRadius: isMobile ? 0 : 2,
-            boxShadow: isMobile ? "none" : undefined,
-          }}
-        >
-          <Typography
-            variant="subtitle1"
-            fontWeight={700}
-            color="primary.dark"
-            gutterBottom
-          >
-            提問紀錄
-          </Typography>
-          <List>
-            {history.map((item, idx) => (
-              <ListItem
-                key={idx}
-                alignItems="flex-start"
-                disablePadding
-                sx={{ mb: 1 }}
-              >
-                <ListItemText
-                  primary={
-                    <>
-                      <strong>Q:</strong> {item.question}
-                    </>
-                  }
-                  secondary={
-                    <>
-                      <strong>A:</strong> {item.answer}
-                    </>
-                  }
-                  primaryTypographyProps={{ sx: { mb: 0.5 } }}
+            {puzzles.map((puzzle) => (
+              <Box key={puzzle.id} sx={{ display: "flex" }}>
+                <Item
+                  puzzle={puzzle}
+                  onClick={() => router.push(`/puzzle/${puzzle.id}`)}
                 />
-              </ListItem>
+              </Box>
             ))}
-          </List>
-        </Paper>
+          </Box>
+        )}
       </Paper>
     </Container>
   );
