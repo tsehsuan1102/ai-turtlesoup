@@ -13,6 +13,8 @@ import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { supabase } from "../../supabaseClient";
+import IconButton from "@mui/material/IconButton";
+import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 
 interface Puzzle {
   id: string;
@@ -118,15 +120,25 @@ export default function PuzzlePage() {
           boxShadow: isMobile ? "none" : undefined,
         }}
       >
-        <Typography
-          variant="h4"
-          fontWeight={700}
-          color="primary"
-          gutterBottom
-          align="center"
-        >
-          {puzzle.title}
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+          <IconButton
+            aria-label="back"
+            onClick={() => router.back()}
+            size={isMobile ? "small" : "medium"}
+          >
+            <ArrowBackIosNewIcon fontSize={isMobile ? "small" : "medium"} />
+          </IconButton>
+          <Typography
+            variant="h4"
+            fontWeight={700}
+            color="primary"
+            gutterBottom
+            align="center"
+            sx={{ flex: 1 }}
+          >
+            {puzzle.title}
+          </Typography>
+        </Box>
         <Paper
           elevation={isMobile ? 0 : 2}
           square={isMobile}
