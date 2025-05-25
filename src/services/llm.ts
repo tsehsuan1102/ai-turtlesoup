@@ -8,33 +8,57 @@ const openai = new OpenAI({
 export async function askLLM({
   puzzle,
   question,
+  clues = [],
 }: {
   puzzle: string;
   question: string;
+  clues?: string[];
 }) {
-  // prompt 設計：請 LLM 只回「是」、「否」或「不相關」
-  const prompt = `你是一個邏輯推理遊戲的 AI 助手。請根據以下湯底（背景故事）判斷玩家的提問，並只用「是」、「否」或「不相關」三種回覆。
+  // prompt 設計：請 LLM 回答是/否/不相關，判斷是否有新線索，並判斷目前線索是否足以推理出答案
+  const prompt = `你是一個邏輯推理遊戲的 AI 助手。請根據以下湯底（背景故事）和玩家目前已經獲得的線索，判斷玩家的提問：
+
+1. 只允許回答「是」、「否」或「不相關」。
+2. 如果這個提問問到一個新線索，請用一句話描述這個線索（否則回空字串）。
+3. 請根據目前所有線索，判斷是否已經足以推理出答案（true/false）。
 
 湯底：${puzzle}
+目前線索：${clues.length > 0 ? clues.join("；") : "（無）"}
 玩家提問：${question}
-請直接回答：`;
 
-  const completion = await openai.responses.create({
-    model: "gpt-4o-mini",
-    input: [
-      { role: "system", content: "你只允許回覆「是」、「否」或「不相關」。" },
+請用 JSON 格式回覆，例如：
+{"answer": "是", "clue": "這個問題問到了兇手的動機。", "canReveal": false}
+
+如果沒有新線索，clue 請回空字串。`;
+
+  const completion = await openai.chat.completions.create({
+    model: "gpt-3.5-turbo",
+    messages: [
+      {
+        role: "system",
+        content:
+          "你只允許回覆 JSON 格式，answer 只能是「是」、「否」或「不相關」。",
+      },
       { role: "user", content: prompt },
     ],
-    // max_tokens: 10,
-    // temperature: 0,
+    max_tokens: 200,
+    temperature: 0,
   });
 
-  // 只允許三種答案
-  const raw = completion.output_text; //[0].message?.content?.trim() || "";
+  const raw = completion.choices[0].message?.content?.trim() || "";
   let answer = "不相關";
-  if (/^是/.test(raw)) answer = "是";
-  else if (/^否/.test(raw)) answer = "否";
-  else if (/不相關/.test(raw)) answer = "不相關";
-
-  return { answer, raw };
+  let clue = "";
+  let canReveal = false;
+  try {
+    const json = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] || raw);
+    if (json.answer) answer = json.answer;
+    if (typeof json.clue === "string") clue = json.clue;
+    if (typeof json.canReveal === "boolean") canReveal = json.canReveal;
+  } catch (e) {
+    console.error(e);
+    // fallback: 只回 answer
+    if (/^是/.test(raw)) answer = "是";
+    else if (/^否/.test(raw)) answer = "否";
+    else if (/不相關/.test(raw)) answer = "不相關";
+  }
+  return { answer, raw, clue, canReveal };
 }

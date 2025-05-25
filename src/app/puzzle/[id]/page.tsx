@@ -39,18 +39,22 @@ export default function PuzzlePage() {
   >([]);
   const isMobile = useMediaQuery("(max-width:600px)");
   const [isComposing, setIsComposing] = useState(false);
+  const [clues, setClues] = useState<string[]>([]);
+  const [showAnswer, setShowAnswer] = useState(false);
   const askMutation = useMutation({
     mutationFn: async ({
       puzzle,
       question,
+      clues,
     }: {
       puzzle: string;
       question: string;
+      clues: string[];
     }) => {
       const res = await fetch("/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ puzzle, question }),
+        body: JSON.stringify({ puzzle, question, clues }),
       });
       if (!res.ok) throw new Error("API error");
       return res.json();
@@ -63,6 +67,10 @@ export default function PuzzlePage() {
           answer: data.answer || "（AI 回答失敗）",
         },
       ]);
+      if (data.clue && data.clue.length > 0 && !clues.includes(data.clue)) {
+        setClues((prev) => [...prev, data.clue]);
+      }
+      if (data.canReveal) setShowAnswer(true);
       setQuestion("");
     },
     onError: (_error, variables) => {
@@ -93,7 +101,7 @@ export default function PuzzlePage() {
 
   const handleAsk = () => {
     if (!question.trim() || !puzzle) return;
-    askMutation.mutate({ puzzle: puzzle.description, question });
+    askMutation.mutate({ puzzle: puzzle.description, question, clues });
   };
 
   if (loading) {
@@ -253,6 +261,60 @@ export default function PuzzlePage() {
             ))}
           </List>
         </Paper>
+        {clues.length > 0 && (
+          <Paper
+            elevation={isMobile ? 0 : 1}
+            square={isMobile}
+            sx={{
+              p: 2,
+              mt: 2,
+              bgcolor: "#f5f5f5",
+              borderRadius: isMobile ? 0 : 2,
+              boxShadow: isMobile ? "none" : undefined,
+            }}
+          >
+            <Typography
+              variant="subtitle1"
+              fontWeight={700}
+              color="secondary.dark"
+              gutterBottom
+            >
+              你已經問到的線索
+            </Typography>
+            <ul style={{ margin: 0, paddingLeft: 20 }}>
+              {clues.map((clue, idx) => (
+                <li key={idx} style={{ marginBottom: 4 }}>
+                  {clue}
+                </li>
+              ))}
+            </ul>
+          </Paper>
+        )}
+        {showAnswer && (
+          <Paper
+            elevation={isMobile ? 0 : 2}
+            square={isMobile}
+            sx={{
+              p: 2,
+              mt: 2,
+              bgcolor: "#fffbe6",
+              borderRadius: isMobile ? 0 : 2,
+              boxShadow: isMobile ? "none" : undefined,
+            }}
+          >
+            <Typography
+              variant="subtitle1"
+              fontWeight={700}
+              color="warning.main"
+              gutterBottom
+            >
+              完整故事揭曉
+            </Typography>
+            <Typography variant="body1" color="text.primary">
+              {puzzle.answer}
+            </Typography>
+          </Paper>
+        )}
       </Paper>
     </Container>
   );
