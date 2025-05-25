@@ -16,6 +16,7 @@ import { supabase } from "../../supabaseClient";
 import IconButton from "@mui/material/IconButton";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import { useMutation } from "@tanstack/react-query";
+import NoSsr from "@mui/material/NoSsr";
 
 interface Puzzle {
   id: string;
@@ -137,167 +138,94 @@ export default function PuzzlePage() {
   }
 
   return (
-    <Container
-      maxWidth={isMobile ? false : "sm"}
-      disableGutters={isMobile}
-      sx={{
-        mt: isMobile ? 0 : 6,
-        mb: isMobile ? 0 : 6,
-        px: isMobile ? 0 : 2,
-        minHeight: isMobile ? "100svh" : undefined,
-        background: isMobile ? "background.default" : undefined,
-      }}
-    >
-      <Paper
-        elevation={isMobile ? 0 : 6}
-        square={isMobile}
+    <NoSsr>
+      <Container
+        maxWidth={isMobile ? false : "sm"}
+        disableGutters={isMobile}
         sx={{
-          p: isMobile ? 2 : 4,
-          borderRadius: isMobile ? 0 : 4,
-          bgcolor: "background.default",
+          mt: isMobile ? 0 : 6,
+          mb: isMobile ? 0 : 6,
+          px: isMobile ? 0 : 2,
           minHeight: isMobile ? "100svh" : undefined,
-          boxShadow: isMobile ? "none" : undefined,
+          background: isMobile ? "background.default" : undefined,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-          <IconButton
-            aria-label="back"
-            onClick={() => router.back()}
-            size={isMobile ? "small" : "medium"}
-          >
-            <ArrowBackIosNewIcon fontSize={isMobile ? "small" : "medium"} />
-          </IconButton>
-          <Typography
-            variant="h4"
-            fontWeight={700}
-            color="primary"
-            gutterBottom
-            align="center"
-            sx={{ flex: 1 }}
-          >
-            {puzzle.title}
-          </Typography>
-        </Box>
         <Paper
-          elevation={isMobile ? 0 : 2}
+          elevation={isMobile ? 0 : 6}
           square={isMobile}
           sx={{
-            p: 2,
-            mb: 3,
-            bgcolor: "secondary.main",
-            borderRadius: isMobile ? 0 : 2,
+            p: isMobile ? 2 : 4,
+            borderRadius: isMobile ? 0 : 4,
+            bgcolor: "background.default",
+            minHeight: isMobile ? "100svh" : undefined,
             boxShadow: isMobile ? "none" : undefined,
           }}
         >
-          <Typography variant="body1" color="text.primary">
-            {puzzle.description}
-          </Typography>
-        </Paper>
-        <Box display="flex" gap={2} mb={3}>
-          <TextField
-            fullWidth
-            variant="outlined"
-            placeholder="請輸入你的提問..."
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            onCompositionStart={() => setIsComposing(true)}
-            onCompositionEnd={() => setIsComposing(false)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !isComposing) handleAsk();
-            }}
-            size={isMobile ? "small" : "medium"}
-          />
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleAsk}
-            sx={{ minWidth: 80, fontSize: isMobile ? "1rem" : undefined }}
-            size={isMobile ? "small" : "medium"}
-            disabled={askMutation.isPending}
-          >
-            {askMutation.isPending ? <CircularProgress size={20} /> : "送出"}
-          </Button>
-        </Box>
-        <Paper
-          elevation={isMobile ? 0 : 1}
-          square={isMobile}
-          sx={{
-            p: 2,
-            bgcolor: "background.paper",
-            borderRadius: isMobile ? 0 : 2,
-            boxShadow: isMobile ? "none" : undefined,
-          }}
-        >
-          <Typography
-            variant="subtitle1"
-            fontWeight={700}
-            color="primary.dark"
-            gutterBottom
-          >
-            提問紀錄
-          </Typography>
-          <List>
-            {history.map((item, idx) => (
-              <ListItem
-                key={idx}
-                alignItems="flex-start"
-                disablePadding
-                sx={{ mb: 1 }}
-              >
-                <ListItemText
-                  primary={
-                    <>
-                      <strong>Q:</strong> {item.question}
-                    </>
-                  }
-                  secondary={
-                    <>
-                      <strong>A:</strong> {item.answer}
-                    </>
-                  }
-                  primaryTypographyProps={{ sx: { mb: 0.5 } }}
-                />
-              </ListItem>
-            ))}
-          </List>
-        </Paper>
-        {clues.length > 0 && (
-          <Paper
-            elevation={isMobile ? 0 : 1}
-            square={isMobile}
-            sx={{
-              p: 2,
-              mt: 2,
-              bgcolor: "#f5f5f5",
-              borderRadius: isMobile ? 0 : 2,
-              boxShadow: isMobile ? "none" : undefined,
-            }}
-          >
-            <Typography
-              variant="subtitle1"
-              fontWeight={700}
-              color="secondary.dark"
-              gutterBottom
+          <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+            <IconButton
+              aria-label="back"
+              onClick={() => router.back()}
+              size={isMobile ? "small" : "medium"}
             >
-              你已經問到的線索
+              <ArrowBackIosNewIcon fontSize={isMobile ? "small" : "medium"} />
+            </IconButton>
+            <Typography
+              variant="h4"
+              fontWeight={700}
+              color="primary"
+              gutterBottom
+              align="center"
+              sx={{ flex: 1 }}
+            >
+              {puzzle.title}
             </Typography>
-            <ul style={{ margin: 0, paddingLeft: 20 }}>
-              {clues.map((clue, idx) => (
-                <li key={idx} style={{ marginBottom: 4 }}>
-                  {clue}
-                </li>
-              ))}
-            </ul>
-          </Paper>
-        )}
-        {showAnswer && (
+          </Box>
           <Paper
             elevation={isMobile ? 0 : 2}
             square={isMobile}
             sx={{
               p: 2,
-              mt: 2,
-              bgcolor: "#fffbe6",
+              mb: 3,
+              bgcolor: "secondary.main",
+              borderRadius: isMobile ? 0 : 2,
+              boxShadow: isMobile ? "none" : undefined,
+            }}
+          >
+            <Typography variant="body1" color="text.primary">
+              {puzzle.description}
+            </Typography>
+          </Paper>
+          <Box display="flex" gap={2} mb={3}>
+            <TextField
+              fullWidth
+              variant="outlined"
+              placeholder="請輸入你的提問..."
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              onCompositionStart={() => setIsComposing(true)}
+              onCompositionEnd={() => setIsComposing(false)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !isComposing) handleAsk();
+              }}
+              size={isMobile ? "small" : "medium"}
+            />
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleAsk}
+              sx={{ minWidth: 80, fontSize: isMobile ? "1rem" : undefined }}
+              size={isMobile ? "small" : "medium"}
+              disabled={askMutation.isPending}
+            >
+              {askMutation.isPending ? <CircularProgress size={20} /> : "送出"}
+            </Button>
+          </Box>
+          <Paper
+            elevation={isMobile ? 0 : 1}
+            square={isMobile}
+            sx={{
+              p: 2,
+              bgcolor: "background.paper",
               borderRadius: isMobile ? 0 : 2,
               boxShadow: isMobile ? "none" : undefined,
             }}
@@ -305,17 +233,92 @@ export default function PuzzlePage() {
             <Typography
               variant="subtitle1"
               fontWeight={700}
-              color="warning.main"
+              color="primary.dark"
               gutterBottom
             >
-              完整故事揭曉
+              提問紀錄
             </Typography>
-            <Typography variant="body1" color="text.primary">
-              {puzzle.answer}
-            </Typography>
+            <List>
+              {history.map((item, idx) => (
+                <ListItem
+                  key={idx}
+                  alignItems="flex-start"
+                  disablePadding
+                  sx={{ mb: 1 }}
+                >
+                  <ListItemText
+                    primary={
+                      <>
+                        <strong>Q:</strong> {item.question}
+                      </>
+                    }
+                    secondary={
+                      <>
+                        <strong>A:</strong> {item.answer}
+                      </>
+                    }
+                    primaryTypographyProps={{ sx: { mb: 0.5 } }}
+                  />
+                </ListItem>
+              ))}
+            </List>
           </Paper>
-        )}
-      </Paper>
-    </Container>
+          {clues.length > 0 && (
+            <Paper
+              elevation={isMobile ? 0 : 1}
+              square={isMobile}
+              sx={{
+                p: 2,
+                mt: 2,
+                bgcolor: "#f5f5f5",
+                borderRadius: isMobile ? 0 : 2,
+                boxShadow: isMobile ? "none" : undefined,
+              }}
+            >
+              <Typography
+                variant="subtitle1"
+                fontWeight={700}
+                color="secondary.dark"
+                gutterBottom
+              >
+                你已經問到的線索
+              </Typography>
+              <ul style={{ margin: 0, paddingLeft: 20 }}>
+                {clues.map((clue, idx) => (
+                  <li key={idx} style={{ marginBottom: 4 }}>
+                    {clue}
+                  </li>
+                ))}
+              </ul>
+            </Paper>
+          )}
+          {showAnswer && (
+            <Paper
+              elevation={isMobile ? 0 : 2}
+              square={isMobile}
+              sx={{
+                p: 2,
+                mt: 2,
+                bgcolor: "#fffbe6",
+                borderRadius: isMobile ? 0 : 2,
+                boxShadow: isMobile ? "none" : undefined,
+              }}
+            >
+              <Typography
+                variant="subtitle1"
+                fontWeight={700}
+                color="warning.main"
+                gutterBottom
+              >
+                完整故事揭曉
+              </Typography>
+              <Typography variant="body1" color="text.primary">
+                {puzzle.answer}
+              </Typography>
+            </Paper>
+          )}
+        </Paper>
+      </Container>
+    </NoSsr>
   );
 }

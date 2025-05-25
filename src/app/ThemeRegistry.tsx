@@ -3,6 +3,7 @@
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useMemo, ReactNode } from "react";
+import NoSsr from "@mui/material/NoSsr";
 
 const lightTheme = createTheme({
   palette: {
@@ -31,5 +32,9 @@ export default function ThemeRegistry({ children }: { children: ReactNode }) {
     () => (prefersDarkMode ? darkTheme : lightTheme),
     [prefersDarkMode]
   );
-  return <ThemeProvider theme={theme}>{children}</ThemeProvider>;
+  return (
+    <NoSsr>
+      <ThemeProvider theme={theme}>{children}</ThemeProvider>
+    </NoSsr>
+  );
 }
