@@ -4,6 +4,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 // const openai = new OpenAIApi(configuration);
+const GPT_MODEL = "gpt-4o-mini";
 
 export async function askLLM({
   puzzle,
@@ -31,7 +32,7 @@ export async function askLLM({
 如果沒有新線索，clue 請回空字串。`;
 
   const completion = await openai.chat.completions.create({
-    model: "gpt-3.5-turbo",
+    model: GPT_MODEL,
     messages: [
       {
         role: "system",
