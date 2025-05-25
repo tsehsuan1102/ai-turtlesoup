@@ -1,9 +1,12 @@
 import { OpenAI } from "openai";
+import { observeOpenAI } from "langfuse";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-// const openai = new OpenAIApi(configuration);
+const openai = observeOpenAI(
+  new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  })
+);
+
 const GPT_MODEL = "gpt-4.1-nano";
 
 export async function askLLM({
