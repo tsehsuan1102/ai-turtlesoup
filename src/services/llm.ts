@@ -1,10 +1,34 @@
-import { OpenAI } from "openai";
-import { observeOpenAI } from "langfuse";
+import OpenAI from "openai";
+import { Langfuse } from "langfuse";
+import { zodTextFormat } from "openai/helpers/zod";
+import { z } from "zod";
 
-// 用 Langfuse 追蹤所有 OpenAI 請求
-const openai = observeOpenAI(new OpenAI());
+// console.log(
+//   "Langfuse env:",
+//   process.env.LANGFUSE_PUBLIC_KEY,
+//   process.env.LANGFUSE_SECRET_KEY,
+//   process.env.LANGFUSE_HOST
+// );
 
-const GPT_MODEL = "gpt-4.1-nano";
+// 主動初始化 Langfuse
+const langfuse = new Langfuse({
+  publicKey: process.env.LANGFUSE_PUBLIC_KEY,
+  secretKey: process.env.LANGFUSE_SECRET_KEY,
+  baseUrl: process.env.LANGFUSE_HOST,
+});
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+const GPT_MODEL = "gpt-4o";
+
+// 定義回答 schema
+const TurtleSoupAnswer = z.object({
+  answer: z.enum(["是", "否", "不相關"]),
+  clue: z.string(),
+  canReveal: z.boolean(),
+});
 
 export async function askLLM({
   puzzle,
@@ -16,27 +40,37 @@ export async function askLLM({
   clues?: string[];
 }) {
   // prompt 設計：請 LLM 回答是/否/不相關，判斷是否有新線索，並判斷目前線索是否足以推理出答案
-  const prompt = `你是一個邏輯推理遊戲的 AI 助手。請根據以下湯底（背景故事）和玩家目前已經獲得的線索，判斷玩家的提問：
+  const prompt = `
+你是一個邏輯推理遊戲的 AI 助手。請根據以下湯底（背景故事）和玩家目前已經獲得的線索，判斷玩家的提問，並嚴格依照以下規則回答：
 
-1. 只允許回答「是」、「否」或「不相關」。
-2. 如果這個提問問到一個新線索，請用一句話描述這個線索（否則回空字串）。
-3. 請根據目前所有線索，判斷是否已經足以推理出答案（true/false）。
+1. 如果玩家的問題和湯底有直接關聯，請回答「是」或「否」。
+2. 如果問題和湯底完全無關，或無法從湯底與線索推理出答案，才回答「不相關」。
+3. 如果這個提問問到一個新線索，請用一句話描述這個線索（否則回空字串）。
+4. 請根據目前所有線索，判斷是否已經足以推理出答案（true/false）。
+
+【範例】
+湯底：一個人死在密室裡，門窗緊閉，地上有一灘水。
+線索：無
+玩家提問：「他是被人殺的嗎？」→「否」
+玩家提問：「他是自殺嗎？」→「是」
+玩家提問：「他是因為溺水死的嗎？」→「不相關」
+
+請用 JSON 格式回覆，例如：
+{"answer": "是", "clue": "這個問題問到了死因。", "canReveal": false}
 
 湯底：${puzzle}
 目前線索：${clues.length > 0 ? clues.join("；") : "（無）"}
 玩家提問：${question}
 
-請用 JSON 格式回覆，例如：
-{"answer": "是", "clue": "這個問題問到了兇手的動機。", "canReveal": false}
-
-如果沒有新線索，clue 請回空字串。`;
+如果沒有新線索，clue 請回空字串。
+`;
 
   // Debug: 確認有呼叫到 openai
-  console.log("Calling openai.chat.completions.create...");
+  console.log("Calling openai.responses.parse...");
 
-  const completion = await openai.chat.completions.create({
+  const response = await openai.responses.parse({
     model: GPT_MODEL,
-    messages: [
+    input: [
       {
         role: "system",
         content:
@@ -44,25 +78,33 @@ export async function askLLM({
       },
       { role: "user", content: prompt },
     ],
-    max_tokens: 200,
+    text: {
+      format: zodTextFormat(TurtleSoupAnswer, "answer"),
+    },
+    // max_tokens: 200,
     temperature: 0,
   });
 
-  const raw = completion.choices[0].message?.content?.trim() || "";
-  let answer = "不相關";
-  let clue = "";
-  let canReveal = false;
-  try {
-    const json = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] || raw);
-    if (json.answer) answer = json.answer;
-    if (typeof json.clue === "string") clue = json.clue;
-    if (typeof json.canReveal === "boolean") canReveal = json.canReveal;
-  } catch (e) {
-    console.error(e);
-    // fallback: 只回 answer
-    if (/^是/.test(raw)) answer = "是";
-    else if (/^否/.test(raw)) answer = "否";
-    else if (/不相關/.test(raw)) answer = "不相關";
-  }
-  return { answer, raw, clue, canReveal };
+  const result = response.output_parsed;
+  const raw = response.output;
+
+  // Langfuse 追蹤：每次問答都建立一個 trace + generation
+  const trace = langfuse.trace({
+    name: "TurtleSoup LLM QA",
+    metadata: { puzzle, question, clues },
+    input: prompt,
+    output: result,
+  });
+  trace
+    .generation({
+      name: "llm-ask",
+      model: GPT_MODEL,
+      input: prompt,
+      output: raw,
+      metadata: result,
+    })
+    .end();
+  await langfuse.shutdownAsync(); // 確保 event 送出
+
+  return result;
 }
