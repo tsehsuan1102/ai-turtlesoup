@@ -1,11 +1,8 @@
 import { OpenAI } from "openai";
 import { observeOpenAI } from "langfuse";
 
-const openai = observeOpenAI(
-  new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  })
-);
+// 用 Langfuse 追蹤所有 OpenAI 請求
+const openai = observeOpenAI(new OpenAI());
 
 const GPT_MODEL = "gpt-4.1-nano";
 
@@ -33,6 +30,9 @@ export async function askLLM({
 {"answer": "是", "clue": "這個問題問到了兇手的動機。", "canReveal": false}
 
 如果沒有新線索，clue 請回空字串。`;
+
+  // Debug: 確認有呼叫到 openai
+  console.log("Calling openai.chat.completions.create...");
 
   const completion = await openai.chat.completions.create({
     model: GPT_MODEL,
