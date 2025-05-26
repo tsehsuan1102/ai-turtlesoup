@@ -283,13 +283,20 @@ export default function PuzzlePage() {
               >
                 你已經問到的線索
               </Typography>
-              <ul style={{ margin: 0, paddingLeft: 20 }}>
+              <List>
                 {clues.map((clue, idx) => (
-                  <li key={idx} style={{ marginBottom: 4 }}>
-                    {clue}
-                  </li>
+                  <ListItem
+                    key={idx}
+                    disablePadding
+                    sx={{ color: "secondary.main" }}
+                  >
+                    <ListItemText
+                      primary={clue}
+                      primaryTypographyProps={{ sx: { mb: 0.5 } }}
+                    />
+                  </ListItem>
                 ))}
-              </ul>
+              </List>
             </Paper>
           )}
           {showAnswer && (
