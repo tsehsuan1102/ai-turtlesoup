@@ -3,13 +3,6 @@ import { Langfuse } from "langfuse";
 import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
 
-// console.log(
-//   "Langfuse env:",
-//   process.env.LANGFUSE_PUBLIC_KEY,
-//   process.env.LANGFUSE_SECRET_KEY,
-//   process.env.LANGFUSE_HOST
-// );
-
 // 主動初始化 Langfuse
 const langfuse = new Langfuse({
   publicKey: process.env.LANGFUSE_PUBLIC_KEY,
@@ -52,11 +45,11 @@ export async function askLLM({
 湯底：一個人死在密室裡，門窗緊閉，地上有一灘水。
 線索：無
 玩家提問：「他是被人殺的嗎？」→「否」
-玩家提問：「他是自殺嗎？」→「是」
 玩家提問：「他是因為溺水死的嗎？」→「不相關」
+玩家提問：「他是自殺嗎？」→「是」
 
 請用 JSON 格式回覆，例如：
-{"answer": "是", "clue": "這個問題問到了死因。", "canReveal": false}
+{"answer": "是", "clue": "死者是自殺的", "canReveal": false}
 
 湯底：${puzzle}
 目前線索：${clues.length > 0 ? clues.join("；") : "（無）"}
@@ -86,7 +79,6 @@ export async function askLLM({
   });
 
   const result = response.output_parsed;
-  const raw = response.output;
 
   // Langfuse 追蹤：每次問答都建立一個 trace + generation
   const trace = langfuse.trace({
@@ -100,7 +92,7 @@ export async function askLLM({
       name: "llm-ask",
       model: GPT_MODEL,
       input: prompt,
-      output: raw,
+      output: result?.answer,
       metadata: result,
     })
     .end();
