@@ -288,7 +288,7 @@ export default function PuzzlePage() {
                   <ListItem
                     key={idx}
                     disablePadding
-                    sx={{ color: "secondary.main" }}
+                    sx={{ color: "info.main" }}
                   >
                     <ListItemText
                       primary={clue}
