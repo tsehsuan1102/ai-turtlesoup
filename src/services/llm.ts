@@ -14,7 +14,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const GPT_MODEL = "gpt-4o";
+const GPT_MODEL = "gpt-4o-mini";
 
 // 定義回答 schema
 const TurtleSoupAnswer = z.object({
@@ -54,6 +54,7 @@ export async function askLLM({
 湯底：${puzzle}
 目前線索：${clues.length > 0 ? clues.join("；") : "（無）"}
 玩家提問：${question}
+
 
 如果沒有新線索，clue 請回空字串。
 `;
