@@ -17,6 +17,11 @@ import IconButton from "@mui/material/IconButton";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import { useMutation } from "@tanstack/react-query";
 import NoSsr from "@mui/material/NoSsr";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import Confetti from "react-confetti";
+import useWindowSize from "react-use/lib/useWindowSize";
 
 interface Puzzle {
   id: string;
@@ -42,6 +47,7 @@ export default function PuzzlePage() {
   const [isComposing, setIsComposing] = useState(false);
   const [clues, setClues] = useState<string[]>([]);
   const [showAnswer, setShowAnswer] = useState(false);
+  const [showRevealButton, setShowRevealButton] = useState(false);
   const askMutation = useMutation({
     mutationFn: async ({
       puzzle,
@@ -81,6 +87,7 @@ export default function PuzzlePage() {
       ]);
     },
   });
+  const { width, height } = useWindowSize();
 
   useEffect(() => {
     async function fetchPuzzle() {
@@ -103,6 +110,22 @@ export default function PuzzlePage() {
   const handleAsk = () => {
     if (!question.trim() || !puzzle) return;
     askMutation.mutate({ puzzle: puzzle.description, question, clues });
+  };
+
+  // 隨機跳轉到其他題目
+  const handleNextPuzzle = async () => {
+    const { data, error } = await supabase
+      .from("puzzles")
+      .select("id")
+      .neq("id", id)
+      .order("random")
+      .limit(1)
+      .single();
+    if (!error && data?.id) {
+      router.push(`/puzzle/${data.id}`);
+    } else {
+      router.push("/");
+    }
   };
 
   if (loading) {
@@ -299,30 +322,100 @@ export default function PuzzlePage() {
               </List>
             </Paper>
           )}
-          {showAnswer && (
-            <Paper
-              elevation={isMobile ? 0 : 2}
-              square={isMobile}
+          {/* 完整故事揭曉 Modal + Confetti */}
+          <Dialog
+            open={showAnswer}
+            onClose={() => {
+              setShowAnswer(false);
+              setShowRevealButton(true);
+            }}
+            maxWidth="sm"
+            fullWidth
+            PaperProps={{
+              sx: {
+                p: 0,
+                m: 0,
+                maxWidth: 480,
+                width: "90vw",
+                maxHeight: 400,
+                overflow: "visible",
+                bgcolor: "#484866",
+              },
+            }}
+          >
+            {showAnswer && (
+              <Confetti
+                width={width}
+                height={height}
+                numberOfPieces={300}
+                recycle={false}
+              />
+            )}
+            <DialogTitle
               sx={{
-                p: 2,
-                mt: 2,
-                bgcolor: "#fffbe6",
-                borderRadius: isMobile ? 0 : 2,
-                boxShadow: isMobile ? "none" : undefined,
+                color: "warning.main",
+                fontWeight: 700,
+                fontSize: 24,
+                textAlign: "center",
+                pb: 0,
               }}
             >
-              <Typography
-                variant="subtitle1"
-                fontWeight={700}
-                color="warning.main"
-                gutterBottom
-              >
-                完整故事揭曉
-              </Typography>
-              <Typography variant="body1" color="text.primary">
+              🎉 完整故事揭曉
+            </DialogTitle>
+            <DialogContent
+              sx={{
+                pt: 2,
+                pb: 2,
+                px: 3,
+                textAlign: "center",
+                overflow: "visible",
+              }}
+            >
+              <Typography variant="body1" color="text.primary" sx={{ mb: 2 }}>
                 {puzzle.answer}
               </Typography>
-            </Paper>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => {
+                  setShowAnswer(false);
+                  setShowRevealButton(true);
+                }}
+                fullWidth
+                sx={{ py: 1.5, fontSize: 20 }}
+              >
+                關閉
+              </Button>
+            </DialogContent>
+          </Dialog>
+          {/* 彈窗關閉後顯示「再看一次謎底」與「再玩一題」 */}
+          {showRevealButton && (
+            <Box
+              sx={{
+                mt: 3,
+                display: "flex",
+                flexDirection: isMobile ? "column" : "row",
+                gap: 2,
+                justifyContent: "center",
+              }}
+            >
+              <Button
+                variant="outlined"
+                color="warning"
+                onClick={() => setShowAnswer(true)}
+                sx={{ fontWeight: 700, fontSize: 18 }}
+              >
+                再看一次謎底
+              </Button>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleNextPuzzle}
+                sx={{ fontWeight: 700, fontSize: 18 }}
+              >
+                再玩一題
+              </Button>
+            </Box>
           )}
         </Paper>
       </Container>
