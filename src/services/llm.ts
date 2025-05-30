@@ -14,7 +14,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const GPT_MODEL = "gpt-4o-mini";
+const GPT_MODEL = "gpt-4.1-mini";
 
 // 定義回答 schema
 const TurtleSoupAnswer = z.object({
