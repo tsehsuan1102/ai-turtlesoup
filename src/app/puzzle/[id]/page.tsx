@@ -38,7 +38,9 @@ export default function PuzzlePage() {
   const params = useParams();
   const router = useRouter();
   const { id } = params;
-  const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
+  const [puzzle, setPuzzle] = useState<Omit<Puzzle, "answer"> | null>(null);
+  const [answer, setAnswer] = useState<string>("");
+  const [answerLoading, setAnswerLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [question, setQuestion] = useState("");
   const [history, setHistory] = useState<
@@ -95,7 +97,7 @@ export default function PuzzlePage() {
       setLoading(true);
       const { data, error } = await supabase
         .from("puzzles")
-        .select("id, title, description, answer, hints, author, tags")
+        .select("id, title, description, hints, author, tags")
         .eq("id", id)
         .single();
       if (!error && data) {
@@ -106,7 +108,28 @@ export default function PuzzlePage() {
       setLoading(false);
     }
     if (id) fetchPuzzle();
+    setAnswer(""); // reset answer when id changes
   }, [id]);
+
+  // lazy fetch answer when showAnswer is set to true
+  useEffect(() => {
+    if (showAnswer && puzzle && !answer) {
+      setAnswerLoading(true);
+      supabase
+        .from("puzzles")
+        .select("answer")
+        .eq("id", puzzle.id)
+        .single()
+        .then(({ data, error }) => {
+          if (!error && data?.answer) {
+            setAnswer(data.answer);
+          } else {
+            setAnswer("（無法取得謎底）");
+          }
+          setAnswerLoading(false);
+        });
+    }
+  }, [showAnswer, puzzle, answer]);
 
   const handleAsk = () => {
     if (!question.trim() || !puzzle) return;
@@ -372,9 +395,20 @@ export default function PuzzlePage() {
                 overflow: "visible",
               }}
             >
-              <Typography variant="body1" color="text.primary" sx={{ mb: 2 }}>
-                {puzzle.answer}
-              </Typography>
+              {answerLoading ? (
+                <Box
+                  display="flex"
+                  justifyContent="center"
+                  alignItems="center"
+                  minHeight={80}
+                >
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <Typography variant="body1" color="text.primary" sx={{ mb: 2 }}>
+                  {answer}
+                </Typography>
+              )}
               <Button
                 variant="contained"
                 color="primary"
