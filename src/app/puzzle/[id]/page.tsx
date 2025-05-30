@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Container from "@mui/material/Container";
@@ -50,18 +51,18 @@ export default function PuzzlePage() {
   const [showRevealButton, setShowRevealButton] = useState(false);
   const askMutation = useMutation({
     mutationFn: async ({
-      puzzle,
+      id,
       question,
       clues,
     }: {
-      puzzle: string;
+      id: string;
       question: string;
       clues: string[];
     }) => {
       const res = await fetch("/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ puzzle, question, clues }),
+        body: JSON.stringify({ id, question, clues }),
       });
       if (!res.ok) throw new Error("API error");
       return res.json();
@@ -109,7 +110,7 @@ export default function PuzzlePage() {
 
   const handleAsk = () => {
     if (!question.trim() || !puzzle) return;
-    askMutation.mutate({ puzzle: puzzle.description, question, clues });
+    askMutation.mutate({ id: puzzle.id, question, clues });
   };
 
   // 隨機跳轉到其他題目
@@ -402,7 +403,10 @@ export default function PuzzlePage() {
               <Button
                 variant="outlined"
                 color="warning"
-                onClick={() => setShowAnswer(true)}
+                onClick={() => {
+                  setShowAnswer(true);
+                  setShowRevealButton(false);
+                }}
                 sx={{ fontWeight: 700, fontSize: 18 }}
               >
                 再看一次謎底
