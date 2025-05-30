@@ -42,6 +42,11 @@ export async function askLLM({
     question,
     clues: clues.length > 0 ? clues.join("；") : "（無）",
   });
+  console.log(
+    "%c 🏪: compiledPrompt ",
+    "font-size:16px;background-color:#2588d5;color:white;",
+    compiledPrompt
+  );
 
   // Debug: 確認有呼叫到 openai
   console.log("Calling openai.responses.parse...");
@@ -62,7 +67,7 @@ export async function askLLM({
   const trace = langfuse.trace({
     name: "TurtleSoup LLM QA",
     metadata: { puzzle, question, clues },
-    input: prompt,
+    input: compiledPrompt,
     output: result,
   });
   trace
