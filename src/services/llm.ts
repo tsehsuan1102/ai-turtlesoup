@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { Langfuse } from "langfuse";
 import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
+import { observeOpenAI } from "langfuse";
 
 // 主動初始化 Langfuse
 const langfuse = new Langfuse({
@@ -35,25 +36,23 @@ export async function askLLM({
   clues?: string[];
 }) {
   // 取得 production prompt 內容
-  const prompt = await langfuse.getPrompt("turtlesoup-qa");
-  const compiledPrompt = prompt.compile({
+  const chatPrompt = await langfuse.getPrompt("turtlesoup-qa", undefined, {
+    type: "chat",
+  });
+
+  const compiledPrompt = chatPrompt.compile({
     puzzle,
     answer,
     question,
     clues: clues.length > 0 ? clues.join("；") : "（無）",
   });
-  console.log(
-    "%c 🏪: compiledPrompt ",
-    "font-size:16px;background-color:#2588d5;color:white;",
-    compiledPrompt
-  );
 
   // Debug: 確認有呼叫到 openai
   console.log("Calling openai.responses.parse...");
 
   const response = await openai.responses.parse({
     model: GPT_MODEL,
-    input: compiledPrompt,
+    input: compiledPrompt as unknown as string,
     text: {
       format: zodTextFormat(TurtleSoupAnswer, "answer"),
     },
@@ -74,7 +73,7 @@ export async function askLLM({
     .generation({
       name: "llm-ask",
       model: GPT_MODEL,
-      input: prompt,
+      input: compiledPrompt,
       output: result?.answer,
       metadata: result,
     })
